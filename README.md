@@ -5,7 +5,9 @@ Nalla-Nudi is an Android educational application developed using Kotlin and Jetp
 
 The application is designed to reduce the language barrier faced by students transitioning into English-based technical education, especially in subjects such as Computer Science, Science, Mathematics, and Engineering.
 
+
 Features
+
 Technical word search
 Subject-wise category filtering
 English pronunciation support
@@ -24,24 +26,9 @@ Room Database	Offline Storage
 Android Text-to-Speech API	Pronunciation Support
 Android Studio	Development Environment
 
-Project Structure
-com.example.nallanudi
-│
-├── data
-│   ├── model
-│   ├── repository
-│   └── local
-│
-├── ui
-│   ├── screens
-│   ├── components
-│   └── theme
-│
-├── viewmodel
-│
-└── MainActivity.kt
 
 Application Workflow
+
 User opens the application
 Searches for a technical word
 Views Kannada explanation and details
