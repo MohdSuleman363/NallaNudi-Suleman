@@ -1,132 +1,226 @@
 package com.example.nallanudi.ui.screens
 
+import android.speech.tts.TextToSpeech
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
-
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-import com.example.nallanudi.utils.TextToSpeechHelper
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import java.util.*
 
 @Composable
 fun DetailScreen(
-
     english: String,
-
     kannada: String,
-
     definition: String,
-
     explanation: String,
-
     example: String
 ) {
 
     val context = LocalContext.current
 
-    val textToSpeechHelper = remember {
+    val tts = remember {
 
-        TextToSpeechHelper(context)
+        TextToSpeech(context) {}
+    }
+
+    DisposableEffect(Unit) {
+
+        onDispose {
+            tts.stop()
+            tts.shutdown()
+        }
     }
 
     Column(
 
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFFF8F4FF),
+                        Color.White
+                    )
+                )
+            )
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp)
 
     ) {
 
-        Text(
-            text = english,
-            style = MaterialTheme.typography.headlineMedium
-        )
+        Card(
 
-        Spacer(modifier = Modifier.height(8.dp))
+            shape = RoundedCornerShape(28.dp),
 
-        Text(
-            text = kannada,
-            style = MaterialTheme.typography.titleLarge
-        )
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
 
-        Spacer(modifier = Modifier.height(20.dp))
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 8.dp
+            ),
 
-        Row(
-
-            horizontalArrangement =
-                Arrangement.spacedBy(12.dp)
-
+            modifier = Modifier.fillMaxWidth()
         ) {
 
-            Button(
-
-                onClick = {
-
-                    textToSpeechHelper
-                        .speakEnglish(english)
-                }
-
+            Column(
+                modifier = Modifier.padding(24.dp)
             ) {
 
-                Text("🔊 English")
-            }
+                Column {
 
-            Button(
+                    Text(
+                        text = english,
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
 
-                onClick = {
+                    Spacer(
+                        modifier = Modifier.height(6.dp)
+                    )
 
-                    textToSpeechHelper
-                        .speakKannada(kannada)
+                    Text(
+                        text = kannada,
+                        fontSize = 24.sp,
+                        color = Color(0xFF6A1B9A),
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+
+                        Button(
+
+                            onClick = {
+
+                                tts.language = Locale.US
+
+                                tts.speak(
+                                    english,
+                                    TextToSpeech.QUEUE_FLUSH,
+                                    null,
+                                    null
+                                )
+                            },
+
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFE1BEE7)
+                            ),
+
+                            shape = RoundedCornerShape(18.dp)
+                        ) {
+
+                            Text(
+                                text = "🔊 English",
+                                color = Color.Black
+                            )
+                        }
+
+                        Button(
+
+                            onClick = {
+
+                                tts.language = Locale("kn")
+
+                                tts.speak(
+                                    kannada,
+                                    TextToSpeech.QUEUE_FLUSH,
+                                    null,
+                                    null
+                                )
+                            },
+
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD1C4E9)
+                            ),
+
+                            shape = RoundedCornerShape(18.dp)
+                        ) {
+
+                            Text(
+                                text = "🔊 Kannada",
+                                color = Color.Black
+                            )
+                        }
+                    }
                 }
 
-            ) {
+                Spacer(modifier = Modifier.height(20.dp))
 
-                Text("🔊 Kannada")
+                ModernSectionCard(
+                    title = "Definition",
+                    content = definition
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ModernSectionCard(
+                    title = "Explanation",
+                    content = explanation
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ModernSectionCard(
+                    title = "Example",
+                    content = example
+                )
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(24.dp))
+@Composable
+fun ModernSectionCard(
+    title: String,
+    content: String
+) {
 
-        Text(
-            text = "Definition",
-            style = MaterialTheme.typography.titleMedium
+    Card(
+
+        shape = RoundedCornerShape(22.dp),
+
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF3E5F5)
         )
 
-        Spacer(modifier = Modifier.height(6.dp))
+    ) {
 
-        Text(
-            text = definition
-        )
+        Column(
+            modifier = Modifier.padding(18.dp)
+        ) {
 
-        Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF6A1B9A)
+            )
 
-        Text(
-            text = "Explanation",
-            style = MaterialTheme.typography.titleMedium
-        )
+            Spacer(modifier = Modifier.height(10.dp))
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = explanation
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = "Example",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = example
-        )
+            Text(
+                text = content,
+                fontSize = 16.sp,
+                color = Color.DarkGray,
+                lineHeight = 24.sp
+            )
+        }
     }
 }

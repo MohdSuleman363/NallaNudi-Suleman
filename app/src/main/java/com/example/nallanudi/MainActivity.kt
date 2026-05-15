@@ -1,30 +1,37 @@
 package com.example.nallanudi
 
 import android.os.Bundle
-
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
-
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-
-import androidx.compose.foundation.layout.padding
-
-import androidx.compose.material3.*
-
-import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-
-import androidx.compose.ui.graphics.vector.ImageVector
-
-import androidx.navigation.compose.*
-
-import com.example.nallanudi.ui.components.BottomNavItem
-import com.example.nallanudi.ui.screens.*
-
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.nallanudi.data.model.Term
+import com.example.nallanudi.data.repository.TermRepository
+import com.example.nallanudi.ui.screens.AboutScreen
+import com.example.nallanudi.ui.screens.DetailScreen
+import com.example.nallanudi.ui.screens.HomeScreen
+import com.example.nallanudi.ui.screens.MyListScreen
+import com.example.nallanudi.ui.theme.NallaNudiTheme
 import com.example.nallanudi.viewmodel.TermViewModel
 
 class MainActivity : ComponentActivity() {
@@ -33,158 +40,173 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
+        enableEdgeToEdge()
+
         setContent {
 
-            val navController = rememberNavController()
+            NallaNudiTheme {
 
-            val database =
-                remember {
-                    com.example.nallanudi
-                        .data.local
-                        .AppDatabase
-                        .getDatabase(this)
-                }
+                val navController =
+                    rememberNavController()
 
-            val termViewModel =
-                remember {
-                    TermViewModel(
-                        database.termDao()
+                val termViewModel: TermViewModel =
+                    viewModel()
+
+                val terms =
+                    remember {
+                        TermRepository.getTerms()
+                    }
+
+                val items = listOf(
+
+                    BottomNavItem(
+                        title = "Home",
+                        route = "home",
+                        icon = Icons.Default.Home
+                    ),
+
+                    BottomNavItem(
+                        title = "My List",
+                        route = "mylist",
+                        icon = Icons.Default.Star
+                    ),
+
+                    BottomNavItem(
+                        title = "About",
+                        route = "about",
+                        icon = Icons.Default.Info
                     )
-                }
-
-            val items = listOf(
-
-                BottomNavItem(
-                    title = "Home",
-                    route = "home",
-                    icon = Icons.Default.Home
-                ),
-
-                BottomNavItem(
-                    title = "My List",
-                    route = "mylist",
-                    icon = Icons.Default.Star
-                ),
-
-                BottomNavItem(
-                    title = "About",
-                    route = "about",
-                    icon = Icons.Default.Info
                 )
-            )
 
-            Scaffold(
+                Scaffold(
 
-                bottomBar = {
+                    bottomBar = {
 
-                    NavigationBar {
+                        NavigationBar {
 
-                        val currentRoute =
+                            val navBackStackEntry by
                             navController.currentBackStackEntryAsState()
-                                .value
-                                ?.destination
-                                ?.route
 
-                        items.forEach { item ->
+                            val currentRoute =
+                                navBackStackEntry
+                                    ?.destination
+                                    ?.route
 
-                            NavigationBarItem(
+                            items.forEach { item ->
 
-                                selected =
-                                    currentRoute == item.route,
+                                NavigationBarItem(
 
-                                onClick = {
+                                    selected =
+                                        currentRoute == item.route,
 
-                                    navController.navigate(item.route)
-                                },
+                                    onClick = {
 
-                                label = {
+                                        navController.navigate(
+                                            item.route
+                                        ) {
 
-                                    Text(item.title)
-                                },
+                                            popUpTo(
+                                                navController.graph.startDestinationId
+                                            ) {
+                                                saveState = true
+                                            }
 
-                                icon = {
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
 
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.title
-                                    )
-                                }
-                            )
+                                    icon = {
+
+                                        Icon(
+                                            imageVector = item.icon,
+                                            contentDescription = item.title
+                                        )
+                                    },
+
+                                    label = {
+                                        Text(item.title)
+                                    }
+                                )
+                            }
                         }
                     }
-                }
 
-            ) { paddingValues ->
+                ) { innerPadding ->
 
-                NavHost(
+                    NavHost(
 
-                    navController = navController,
+                        navController = navController,
 
-                    startDestination = "home",
+                        startDestination = "home",
 
-                    modifier = androidx.compose.ui.Modifier
-                        .padding(paddingValues)
-                ) {
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
 
-                    composable("home") {
+                        composable("home") {
 
-                        HomeScreen(
-                            navController = navController,
-                            viewModel = termViewModel
-                        )
-                    }
+                            HomeScreen(
+                                navController = navController,
+                                termViewModel = termViewModel,
+                                terms = terms
+                            )
+                        }
 
-                    composable("mylist") {
+                        composable("mylist") {
 
-                        val favorites by
-                        termViewModel.favorites.collectAsState()
+                            MyListScreen(
+                                navController = navController,
+                                termViewModel = termViewModel,
+                                terms = terms
+                            )
+                        }
 
-                        MyListScreen(
-                            favoriteTerms = favorites,
-                            navController = navController
-                        )
-                    }
+                        composable("about") {
 
-                    composable("about") {
+                            AboutScreen()
+                        }
 
-                        AboutScreen()
-                    }
+                        composable(
 
-                    composable(
-                        route =
-                            "detail/{english}/{kannada}/{definition}/{explanation}/{example}"
-                    ) { backStackEntry ->
+                            route = "detail/{english}",
 
-                        DetailScreen(
+                            arguments = listOf(
 
-                            english =
+                                navArgument("english") {
+                                    type = NavType.StringType
+                                }
+                            )
+                        ) { backStackEntry ->
+
+                            val english =
                                 backStackEntry.arguments
                                     ?.getString("english")
-                                    ?: "",
 
-                            kannada =
-                                backStackEntry.arguments
-                                    ?.getString("kannada")
-                                    ?: "",
+                            val term =
+                                terms.find {
+                                    it.english == english
+                                }
 
-                            definition =
-                                backStackEntry.arguments
-                                    ?.getString("definition")
-                                    ?: "",
+                            if (term != null) {
 
-                            explanation =
-                                backStackEntry.arguments
-                                    ?.getString("explanation")
-                                    ?: "",
-
-                            example =
-                                backStackEntry.arguments
-                                    ?.getString("example")
-                                    ?: ""
-                        )
+                                DetailScreen(
+                                    english = term.english,
+                                    kannada = term.kannada,
+                                    definition = term.definition,
+                                    explanation = term.explanation,
+                                    example = term.example
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+
+data class BottomNavItem(
+    val title: String,
+    val route: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+)

@@ -1,191 +1,307 @@
 package com.example.nallanudi.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
-
 import androidx.compose.runtime.*
-
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-
 import com.example.nallanudi.data.model.Term
 import com.example.nallanudi.viewmodel.TermViewModel
+import java.time.LocalDate
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
-    viewModel: TermViewModel
+    termViewModel: TermViewModel,
+    terms: List<Term>
 ) {
 
-    val query by viewModel.query.collectAsState()
+    var searchText by remember {
+        mutableStateOf("")
+    }
 
-    val filteredTerms by
-    viewModel.filteredTerms.collectAsState(
-        initial = emptyList()
-    )
+    var selectedCategory by remember {
+        mutableStateOf("All")
+    }
 
-    val selectedSubject by
-    viewModel.selectedSubject.collectAsState()
+    val filteredTerms = terms.filter {
+
+        val matchesSearch =
+
+            it.english.contains(searchText, true) ||
+                    it.kannada.contains(searchText, true)
+
+        val matchesCategory =
+
+            selectedCategory == "All" ||
+                    it.subject.equals(selectedCategory, true)
+
+        matchesSearch && matchesCategory
+    }
+
+    val currentDay = remember {
+        LocalDate.now().dayOfYear
+    }
+
+    val wordOfTheDay = remember(currentDay) {
+
+        terms[currentDay % terms.size]
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFF8F4FF))
             .padding(16.dp)
     ) {
 
         Text(
             text = "Nalla-Nudi",
-            style = MaterialTheme.typography.headlineMedium
+            fontSize = 34.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6A1B9A)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "The beauty of Language",
+            fontSize = 18.sp,
+            color = Color.DarkGray
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFEADCF8)
+            ),
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+
+                Text(
+                    text = "Word of the Day",
+                    color = Color(0xFF6A1B9A),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = wordOfTheDay.english,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                Text(
+                    text = wordOfTheDay.kannada,
+                    fontSize = 22.sp,
+                    color = Color.DarkGray
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = wordOfTheDay.definition,
+                    color = Color.Gray
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         OutlinedTextField(
-
-            value = query,
-
+            value = searchText,
             onValueChange = {
-                viewModel.updateQuery(it)
+                searchText = it
             },
-
-            label = {
+            placeholder = {
                 Text("Search terms")
             },
-
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        Row {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
 
             listOf(
                 "All",
                 "Science",
                 "Math"
-            ).forEach { subject ->
+            ).forEach { category ->
 
                 FilterChip(
-
-                    selected =
-                        selectedSubject == subject,
+                    selected = selectedCategory == category,
 
                     onClick = {
-                        viewModel.updateSubject(subject)
+                        selectedCategory = category
                     },
 
                     label = {
-                        Text(subject)
-                    },
-
-                    modifier =
-                        Modifier.padding(end = 8.dp)
+                        Text(category)
+                    }
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         if (filteredTerms.isEmpty()) {
 
-            Text("No results found")
-
-        } else {
-
-            LazyColumn {
-
-                items(filteredTerms) { term ->
-
-                    TermCard(
-                        term = term,
-                        navController = navController,
-                        viewModel = viewModel
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TermCard(
-
-    term: Term,
-
-    navController: NavController,
-
-    viewModel: TermViewModel
-) {
-
-    val isFavorite =
-        viewModel
-            .favorites
-            .collectAsState()
-            .value
-            .contains(term)
-
-    Card(
-
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 12.dp)
-            .clickable {
-
-                navController.navigate(
-                    "detail/" +
-                            "${term.english}/" +
-                            "${term.kannada}/" +
-                            "${term.definition}/" +
-                            "${term.explanation}/" +
-                            "${term.example}"
-                )
-            }
-    ) {
-
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-
-            Text(
-                text = term.english,
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = term.kannada
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = term.definition
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-
-                onClick = {
-                    viewModel.toggleFavorite(term)
-                }
-
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
 
                 Text(
-                    if (isFavorite)
-                        "Remove"
-                    else
-                        "Save"
+                    text = "No terms found",
+                    fontSize = 20.sp,
+                    color = Color.Gray
                 )
+            }
+
+        } else {
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+
+                items(filteredTerms) { term ->
+
+                    val isFavorite =
+                        termViewModel.isFavorite(term)
+
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shadow(
+                                    elevation = 8.dp,
+                                    shape = RoundedCornerShape(24.dp)
+                                )
+                                .clickable {
+
+                                    navController.navigate(
+                                        "detail/${term.english}"
+                                    )
+                                },
+
+                            shape = RoundedCornerShape(24.dp),
+
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            )
+                        ) {
+
+                            Column(
+                                modifier = Modifier.padding(20.dp)
+                            ) {
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement =
+                                        Arrangement.SpaceBetween,
+                                    verticalAlignment =
+                                        Alignment.CenterVertically
+                                ) {
+
+                                    Column {
+
+                                        Text(
+                                            text = term.english,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.Black
+                                        )
+
+                                        Spacer(
+                                            modifier =
+                                                Modifier.height(4.dp)
+                                        )
+
+                                        Text(
+                                            text = term.kannada,
+                                            fontSize = 18.sp,
+                                            color = Color.DarkGray
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            termViewModel
+                                                .toggleFavorite(term)
+                                        }
+                                    ) {
+
+                                        Icon(
+                                            imageVector =
+                                                Icons.Default.Star,
+
+                                            contentDescription =
+                                                "Favorite",
+
+                                            tint =
+
+                                                if (isFavorite)
+                                                    Color(0xFFFFC107)
+
+                                                else
+                                                    Color.LightGray
+                                        )
+                                    }
+                                }
+
+                                Spacer(
+                                    modifier =
+                                        Modifier.height(12.dp)
+                                )
+
+                                Text(
+                                    text = term.definition,
+                                    fontSize = 16.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
             }
         }
     }
