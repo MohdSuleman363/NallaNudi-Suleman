@@ -40,6 +40,7 @@ com.example.nallanudi
 ├── viewmodel
 │
 └── MainActivity.kt
+
 Application Workflow
 User opens the application
 Searches for a technical word
